@@ -1,13 +1,16 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"log"
 	"net/url"
 	"os"
+	"strings"
 	"vim-swp-exp/settings"
 	"vim-swp-exp/watcher"
 
+	mapset "github.com/deckarep/golang-set"
 	cli "github.com/urfave/cli/v2"
 )
 
@@ -51,8 +54,32 @@ func run(c *cli.Context) error {
 			log.Println("url.Parse failed,err:", err)
 			return err
 		}
-		w := watcher.NewWatcher()
-		w.Watch(u)
+		watcher.Watch(u)
+	} else if len(settings.AppConfig.InputFilePath) > 0 {
+		file, err := os.Open(settings.AppConfig.InputFilePath)
+		if err != nil {
+			log.Println("os.Open failed,err:", err)
+			return err
+		}
+		URLSet := mapset.NewSet()
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := strings.TrimSpace(scanner.Text())
+			if len(line) == 0 {
+				continue
+			}
+			u, err := url.Parse(line)
+			if err != nil {
+				log.Println("url.Parse failed,err:", err)
+				continue
+			}
+			if URLSet.Contains(u) {
+				continue
+			}
+			URLSet.Add(u)
+			go watcher.Watch(u)
+		}
+		select {}
 	} else {
 		cli.ShowAppHelp(c)
 		return errors.New("pls specify -u or -f")

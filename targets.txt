@@ -1,0 +1,6 @@
+http://localhost:8888/phpinfo.php
+http://localhost:8888/index.php
+http://localhost:8888/xss.php
+http://localhost:8888/encode.php
+http://localhost:8888/load.php
+
